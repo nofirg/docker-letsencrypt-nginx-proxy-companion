@@ -43,6 +43,17 @@ function get_nginx_proxy_cid {
         echo "Check that you use the --volumes-from option to mount volumes from the nginx-proxy or label the nginx proxy container to use with 'com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true'." >&2
         exit 1
     fi
+
+    # Check if any container has been labelled as the docker-gen container.
+    local labeled_cid2=$(docker_api "/containers/json" | jq -r '.[] | select( .Labels["com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_gen"] == "true")|.Id')
+    if [[ ! -z "${labeled_cid2:-}" ]]; then
+        export NGINX_DOCKER_GEN_CONTAINER=$labeled_cid2
+    fi
+    if [[ -z "${NGINX_DOCKER_GEN_CONTAINER:-}" ]]; then
+        echo "Error: can't get docker-gen container id !" >&2
+        echo "Check that you use the --volumes-from option to mount volumes from the nginx-proxy or label the nginx proxy container to use with 'com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_gen=true'." >&2
+        exit 1
+    fi
 }
 
 function check_writable_directory {
